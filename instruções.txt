@@ -12,3 +12,18 @@ srl:
 Format: R, Opcode: 0110011, funct3: 101, funct6/7: 0000000
 beq:
 Format: SB, Opcode: 1100111, funct3: 000, funct6/7: n.a.
+
+Format: I
+imm[11:0]: 12 bits | rs1: 5 bits | funct3: 3 bits | rd: 5 bits | opcode: 7 bits
+// rs1, rd – números dos dois registros utilizados na instrução, imm – constante ou endereço de memória;
+
+Format: R
+funct7: 7 bits | rs2: 5 bits | rs1: 5 bits | funct3: 3 bits | rd: 5 bits | opcode: 7 bits
+// rs1, rs2 - regitradores de origem, rd - registrador de destino
+
+Format: S
+imm[11:5]: 7 bits | rs2: 5 bits | rs1: 5 bits | funct3: 3 bits | imm[4:0]: 5 bits | opcode: 7 bits
+// rs1, rs2 - regitradores de origem, rd - registrador de destino
+
+Format: SB
+imm[11:5]: 7 bits | rs2: 5 bits | rs1: 5: bits | funct3: 3 bits | rd: 5 bits | opcode: 7 bits
