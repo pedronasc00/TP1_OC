@@ -27,3 +27,6 @@ imm[11:5]: 7 bits | rs2: 5 bits | rs1: 5 bits | funct3: 3 bits | imm[4:0]: 5 bit
 
 Format: SB
 imm[11:5]: 7 bits | rs2: 5 bits | rs1: 5: bits | funct3: 3 bits | rd: 5 bits | opcode: 7 bits
+
+
+add x5, x5, x6
