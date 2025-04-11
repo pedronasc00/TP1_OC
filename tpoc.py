@@ -33,14 +33,21 @@ def ler_instrucao(linha):
 def conversao_binaria(rd, rs1, rs2):
     # Função auxiliar para converter o número após o 'x' em binário
     def converter_para_binario(valor):
+        # Se o valor contiver 'x', converte o número após o 'x'
         if 'x' in valor:
-            numero = int(re.findall(r'\d+', valor)[0])  # Converte o primeiro número após 'x' para inteiro
+            # Se o valor contiver parênteses, pega o número dentro dos parênteses
+            if '(' in valor and ')' in valor:
+                numero = int(re.findall(r'\d+', valor.split('x')[1])[0])  # Pega o número após 'x' e dentro dos parênteses
+            else:
+                numero = int(re.findall(r'\d+', valor)[0])  # Caso normal, apenas número após o 'x'
             return format(numero, '05b')  # Converte para binário com 5 bits
         return None  # Caso não tenha 'x', retorna None
 
     # Converte os valores de rd, rs1 e rs2, se houver um número após 'x'
     rd_bin = converter_para_binario(rd)
     rs1_bin = converter_para_binario(rs1)
+    
+    # Converte rs2 apenas se não for None
     rs2_bin = converter_para_binario(rs2) if rs2 is not None else None
 
     # Retorna os resultados
