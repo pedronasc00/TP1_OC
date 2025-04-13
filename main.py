@@ -142,7 +142,7 @@ if __name__ == "__main__" :
         print("Para encerrar digite fim")
         while True:
             linha = input("> ")
-            if linha.lower() == 'fim':
+            if linha.lower() == 'fim': # digite fim para finalizar a leitura de linhas
                 break
             linhas.append(linha)
 
