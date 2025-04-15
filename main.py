@@ -136,6 +136,15 @@ if __name__ == "__main__" :
     opcao = input("Escolha 1(ler pelo arquivo) ou 2(executar pelo terminal): ")
     if opcao == "1":
         n_arquivo = input("Digite o nome do arquivo .asm: ")
+        try:
+            with open(n_arquivo, 'r') as arquivo:
+                linhas = arquivo.readlines()
+                for linha in linhas:
+                    instr, rd, rs1, rs2, imediato = ler_instrucao(linha)
+                    if instr is not None:
+                        montar_instrucao(instr, rd, rs1, rs2, imediato)
+        except FileNotFoundError:
+            print("Arquivo não encontrado.")
         
     elif opcao == "2":
         linhas = []
