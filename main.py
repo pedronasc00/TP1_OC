@@ -38,7 +38,6 @@ def ler_instrucao(linha):
             rs1 = parte[2]
             imm = None
             rs2 = None
-
     else:
         print("erro na linha escrita")
         return None, None, None, None, None
@@ -56,34 +55,26 @@ def conversao_binaria(valor):
 
     elif valor.startswith("0b"):
         v_binario =  valor[2:]
-        if len(v_binario) < 5:
-            return v_binario.zfill(5)
-        else:
-            return v_binario
-         
+        return v_binario.zfill(5) if len(v_binario) < 5 else v_binario
+
     elif valor.startswith("0x") or valor.startswith("-0x"):
-        if valor.startswith("0x"):
-            numero = int(valor[2:], 16)           
-        else:
-            numero = -int(valor[3:], 16)
+        numero = int(valor, 16)
         return format(numero & 0x1F, '05b')
 
-    elif (valor.isdigit()) or (valor.startswith('-') and valor[1:].isdigit()):
+    elif valor.isdigit() or (valor.startswith('-') and valor[1:].isdigit()):
         numero = int(valor)
         return format(numero, '05b')
-    
+
     return None
 
 def extrair_imediato(imm, Format):
     if imm is None:
         return
-    
-    if imm.startswith("0x"):
+
+    if imm.startswith("0x") or imm.startswith("-0x"):
         imm = int(imm, 16)
-    elif imm.startswith("-0x"):
-        imm = -int(imm[3:], 16)
     elif '-' in imm:
-        imm = int(imm)* -1
+        imm = int(imm) * -1
     else:
         imm = int(imm)
     
@@ -95,9 +86,8 @@ def extrair_imediato(imm, Format):
         return format(imm & 0xFFF, '013b')
 
 def montar_instrucao(instr, rd, rs1, rs2, imm):
-    
     if instr not in instrucoes:
-        print("Instrução invalida")
+        print("Instrução inválida")
         return None
     
     info = instrucoes[instr]
@@ -110,31 +100,28 @@ def montar_instrucao(instr, rd, rs1, rs2, imm):
     rs1_bin = conversao_binaria(rs1)
     rs2_bin = conversao_binaria(rs2)
     imm_bin = extrair_imediato(imm, fmt)
-        
+
     if fmt == "R":
-        print(f"{funct7}{rs2_bin}{rs1_bin}{funct3}{rd_bin}{opcode}")
-        # funct7: 7 bits | rs2: 5 bits | rs1: 5 bits | funct3: 3 bits | rd: 5 bits | opcode: 7 bits
+        return f"{funct7}{rs2_bin}{rs1_bin}{funct3}{rd_bin}{opcode}"
     elif fmt == "I":
-        print(f"{imm_bin}{rs1_bin}{funct3}{rd_bin}{opcode}")
-        # imm[11:0]: 12 bits | rs1: 5 bits | funct3: 3 bits | rd: 5 bits | opcode: 7 bits
+        return f"{imm_bin}{rs1_bin}{funct3}{rd_bin}{opcode}"
     elif fmt == "S":
         rs2_bin = rd_bin
-        rd_bin = None
-        imm_inter = imm_bin[:7] if imm_bin is not None else "0000000"
-        imm_ext = imm_bin[7:] if imm_bin is not None else "00000"
-        
-        print(f"{imm_inter}{rs2_bin}{rs1_bin}{funct3}{imm_ext}{opcode}")
-        # imm[11:5]: 7 bits | rs2: 5 bits | rs1: 5 bits | funct3: 3 bits | imm[4:0]: 5 bits | opcode: 7 bits
+        imm_inter = imm_bin[:7] if imm_bin else "0000000"
+        imm_ext = imm_bin[7:] if imm_bin else "00000"
+        return f"{imm_inter}{rs2_bin}{rs1_bin}{funct3}{imm_ext}{opcode}"
     elif fmt == "SB":
-        imm_inter = imm_bin[0] + imm_bin[2:8] if imm_bin is not None else "0000000"
-        imm_ext = imm_bin[8:12] + imm_bin[1] if imm_bin is not None else "00000"
-        print(f"{imm_inter}{rs2_bin}{rs1_bin}{funct3}{imm_ext}{opcode}")
-        # imm[11:5]: 7 bits | rs2: 5 bits | rs1: 5: bits | funct3: 3 bits | rd: 5 bits | opcode: 7 bits
+        imm_inter = imm_bin[0] + imm_bin[2:8] if imm_bin else "0000000"
+        imm_ext = imm_bin[8:12] + imm_bin[1] if imm_bin else "00000"
+        return f"{imm_inter}{rs2_bin}{rs1_bin}{funct3}{imm_ext}{opcode}"
+    return None
 
 if __name__ == "__main__" :
 
     opcao = input("Escolha 1(ler pelo arquivo) ou 2(executar pelo terminal): ")
+    
     if opcao == "1":
+        saidas_binarias = []
         n_arquivo = input("Digite o nome do arquivo .asm: ")
         try:
             with open(n_arquivo, 'r') as arquivo:
@@ -142,7 +129,13 @@ if __name__ == "__main__" :
                 for linha in linhas:
                     instr, rd, rs1, rs2, imediato = ler_instrucao(linha)
                     if instr is not None:
-                        montar_instrucao(instr, rd, rs1, rs2, imediato)
+                        binario = montar_instrucao(instr, rd, rs1, rs2, imediato)
+                        if binario:
+                            saidas_binarias.append(binario)
+            with open("saida.txt", "w") as arquivo_saida:
+                for linha in saidas_binarias:
+                    arquivo_saida.write(linha + "\n")
+            print("Instruções no arquivo 'saida.txt'")
         except FileNotFoundError:
             print("Arquivo não encontrado.")
         
@@ -151,12 +144,13 @@ if __name__ == "__main__" :
         print("Para encerrar digite fim")
         while True:
             linha = input("> ")
-            if linha.lower() == 'fim': # digite fim para finalizar a leitura de linhas
+            if linha.lower() == 'fim':
                 break
             linhas.append(linha)
 
         for linha in linhas:
             instr, rd, rs1, rs2, imediato = ler_instrucao(linha)
-
             if instr is not None:
-                montar_instrucao(instr, rd, rs1, rs2, imediato)
+                binario = montar_instrucao(instr, rd, rs1, rs2, imediato)
+                if binario:
+                    print(binario)
