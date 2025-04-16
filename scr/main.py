@@ -1,5 +1,4 @@
 from assembler import *
-import sys
 
 def main():
     args = sys.argv
