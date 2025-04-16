@@ -1,9 +1,9 @@
 import re
+import sys
 
 instrucoes = {
     "add": {"Format": "R", "Opcode": "0110011", "funct3": "000", "funct7": "0000000"},
     "sub": {"Format": "R", "Opcode": "0110011", "funct3": "000", "funct7": "0100000"},
-    "add": {"Format": "R", "Opcode": "0110011", "funct3": "000", "funct7": "0000000"},
     "and": {"Format": "R","Opcode": '0110011', "funct3": '111', "funct7": "0000000"},
     "or":  {"Format": "R","Opcode": '0110011', "funct3": '110', "funct7": "0000000"},
     "xor": {"Format": "R","Opcode": '0110011', "funct3": '100', "funct7": "0000000"},
@@ -14,8 +14,8 @@ instrucoes = {
     "sh": {"Format": "S", "Opcode": '0100011', "funct3": '001', "funct7": None},
     "sw": {"Format": "S", "Opcode": '0100011', "funct3": '010', "funct7": None},
     
-    "beq": {"Format": "SB", "Opcode": '1100111', "funct3": '000', "funct7": None},
-    "bne": {"Format": "SB", "Opcode": '1100111', "funct3": '001', "funct7": None},
+    "beq": {"Format": "SB", "Opcode": '1100011', "funct3": '000', "funct7": None},
+    "bne": {"Format": "SB", "Opcode": '1100011', "funct3": '001', "funct7": None},
     
     "lb": {"Format": "I", "Opcode": '0000011', "funct3": '000', "funct7": None},
     "lh": {"Format": "I", "Opcode": '0000011', "funct3": '001', "funct7": None},
@@ -29,24 +29,17 @@ def ler_instrucao(linha):
     instrucao = linha.strip().replace(",", "")
     parte = instrucao.split()
 
-    instr = None   
-    rd = None
-    rs1 = None
-    rs2 = None
-    imm = None
+    instr = rd = rs1 = rs2 = imm = None
     
     if len(parte) == 4:
-        instr = parte[0]
-        rd = parte[1]
-        rs1 = parte[2]
+        instr, rd, rs1 = parte[:3]
         if parte[3].startswith("x"):
             rs2 = parte[3]
         else:
             imm = parte[3]
 
     elif len(parte) == 3:
-        instr = parte[0]
-        rd = parte[1]
+        instr, rd = parte[:2]
         if '(' in parte[2]:
             match = re.match(r"(-?\d+)\(x(\d+)\)", parte[2])
             if match:
@@ -54,9 +47,8 @@ def ler_instrucao(linha):
                 rs1 = "x" + match.group(2)
         else:
             rs1 = parte[2]
-    
     else:
-        print("erro na linha escrita")
+        print("Erro na linha escrita")
         return None, None, None, None, None
     
     return instr, rd, rs1, rs2, imm
@@ -66,12 +58,11 @@ def conversao_binaria(valor):
         return None
         
     if valor.startswith("x"):
-        num_str = valor.split('x')[1]
-        numero = int(num_str)
+        numero = int(valor[1:])
         return format(numero, '05b')
 
     elif valor.startswith("0b"):
-        v_binario =  valor[2:]
+        v_binario = valor[2:]
         return v_binario.zfill(5) if len(v_binario) < 5 else v_binario
 
     elif valor.startswith("0x") or valor.startswith("-0x"):
@@ -86,36 +77,32 @@ def conversao_binaria(valor):
 
 def extrair_imediato(imm, Format):
     if imm is None:
-        return
+        return None
 
     if imm.startswith("0x"):
         imm = int(imm, 16)
     elif imm.startswith("-0x"):
         imm = -int(imm[3:], 16)
-    elif '-' in imm:
-        imm = int(imm) * -1
     else:
         imm = int(imm)
-    
-    if Format == 'I':
-        return format(imm & 0xFFF, '012b')
-    elif Format == 'S':
+
+    if Format == 'I' or Format == 'S':
         return format(imm & 0xFFF, '012b')
     elif Format == 'SB':
-        return format(imm & 0xFFF, '013b')
-    
+        return format(imm & 0x1FFF, '013b') 
+    return None
 
 def montar_instrucao(instr, rd, rs1, rs2, imm):
     if instr not in instrucoes:
-        print("Instrução inválida")
+        print(f"Instrução inválida: {instr}")
         return None
-    
+
     info = instrucoes[instr]
     fmt = info["Format"]
     opcode = info["Opcode"]
     funct3 = info["funct3"]
     funct7 = info.get("funct7", "")
-    
+
     rd_bin = conversao_binaria(rd)
     rs1_bin = conversao_binaria(rs1) if fmt != "U" else extrair_imediato(rs1, fmt)
     rs2_bin = conversao_binaria(rs2)  
@@ -124,22 +111,23 @@ def montar_instrucao(instr, rd, rs1, rs2, imm):
     if fmt == "R":
         rs2_bin = imm_bin if rs2_bin is None else rs2_bin
         return f"{funct7}{rs2_bin}{rs1_bin}{funct3}{rd_bin}{opcode}"
-        # funct7: 7 bits | rs2: 5 bits | rs1: 5 bits | funct3: 3 bits | rd: 5 bits | opcode: 7 bits
+
     elif fmt == "I":
         return f"{imm_bin}{rs1_bin}{funct3}{rd_bin}{opcode}"
-        # imm[11:0]: 12 bits | rs1: 5 bits | funct3: 3 bits | rd: 5 bits | opcode: 7 bits
+
     elif fmt == "S":
-        rs2_bin = imm_bin if rs2_bin is None else rs2_bin
-        imm_inter = imm_bin[:7] if imm_bin is not None else "0000000"
-        imm_ext = imm_bin[7:] if imm_bin is not None else "00000"
-        
+        rs2_bin = rd_bin 
+        imm_inter = imm_bin[:7] if imm_bin else "0000000"
+        imm_ext = imm_bin[7:] if imm_bin else "00000"
         return f"{imm_inter}{rs2_bin}{rs1_bin}{funct3}{imm_ext}{opcode}"
-        # imm[11:5]: 7 bits | rs2: 5 bits | rs1: 5 bits | funct3: 3 bits | imm[4:0]: 5 bits | opcode: 7 bits
+
     elif fmt == "SB":
-        rs2_bin = imm_bin if rs2_bin is None else rs2_bin
-        imm_inter = imm_bin[0] + imm_bin[2:8] if imm_bin  is not None else "0000000"
-        imm_ext = imm_bin[8:12] + imm_bin[1] if imm_bin is not None else "00000"
-        
-        return f"{imm_inter}{rs2_bin}{rs1_bin}{funct3}{imm_ext}{opcode}"
-        # imm[11:5]: 7 bits | rs2: 5 bits | rs1: 5: bits | funct3: 3 bits | rd: 5 bits | opcode: 7 bits
+        rs2_bin = rd_bin 
+        if imm_bin:
+            imm12 = imm_bin[0]   
+            imm10_5 = imm_bin[1:7]    
+            imm4_1 = imm_bin[7:11]    
+            imm11 = imm_bin[11]       
+            return f"{imm12}{imm10_5}{rs2_bin}{rs1_bin}{funct3}{imm4_1}{imm11}{opcode}"
+
     return None
