@@ -2,12 +2,23 @@ import re
 
 instrucoes = {
     "lb": {"Format": "I", "Opcode": '0000011', "funct3": '000', "funct7": None},
+    "lh": {"Format": "I", "Opcode": '0000011', "funct3": '001', "funct7": None},
+    "lw": {"Format": "I", "Opcode": '0000011', "funct3": '010', "funct7": None},
     "sb": {"Format": "S", "Opcode": '0100011', "funct3": '000', "funct7": None},
+    "sh": {"Format": "S", "Opcode": '0100011', "funct3": '001', "funct7": None},
+    "sw": {"Format": "S", "Opcode": '0100011', "funct3": '010', "funct7": None},
     "sub": {"Format": "R", "Opcode": "0110011", "funct3": "000", "funct7": "0100000"},
+    "add": {"Format": "R", "Opcode": "0110011", "funct3": "000", "funct7": "0000000"},
     "and": {"Format": "R","Opcode": '0110011', "funct3": '111', "funct7": "0000000"},
+    "or":  {"Format": "R","Opcode": '0110011', "funct3": '110', "funct7": "0000000"},
+    "xor": {"Format": "R","Opcode": '0110011', "funct3": '100', "funct7": "0000000"},
     "ori": {"Format": "I", "Opcode": '0010011', "funct3": '110', "funct7": None},
-    "slr": {"Format": "R", "Opcode": '0010011', "funct3": '101', "funct7": "0000000"},
-    "beq": {"Format": "SB", "Opcode": '1100111', "funct3": '000', "funct7": None}
+    "andi": {"Format": "I", "Opcode": '0010011', "funct3": '111', "funct7": None},
+    "addi": {"Format": "I", "Opcode": '0010011', "funct3": '000', "funct7": None},
+    "slr": {"Format": "R", "Opcode": '0110011', "funct3": '101', "funct7": "0000000"},
+    "sll": {"Format": "R", "Opcode": '0110011', "funct3": '001', "funct7": "0000000"},
+    "beq": {"Format": "SB", "Opcode": '1100111', "funct3": '000', "funct7": None},
+    "bne": {"Format": "SB", "Opcode": '1100111', "funct3": '001', "funct7": None}
 }
 
 def ler_instrucao(linha):
@@ -71,10 +82,10 @@ def extrair_imediato(imm, Format):
     if imm is None:
         return
 
-    if imm.startswith("0x") or imm.startswith("-0x"):
+    if imm.startswith("0x"):
         imm = int(imm, 16)
-    elif '-' in imm:
-        imm = int(imm) * -1
+    elif imm.startswith('-'):
+        imm = int(imm)
     else:
         imm = int(imm)
     
