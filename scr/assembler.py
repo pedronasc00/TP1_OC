@@ -3,6 +3,7 @@ import re
 instrucoes = {
     "add": {"Format": "R", "Opcode": "0110011", "funct3": "000", "funct7": "0000000"},
     "sub": {"Format": "R", "Opcode": "0110011", "funct3": "000", "funct7": "0100000"},
+    "add": {"Format": "R", "Opcode": "0110011", "funct3": "000", "funct7": "0000000"},
     "and": {"Format": "R","Opcode": '0110011', "funct3": '111', "funct7": "0000000"},
     "or":  {"Format": "R","Opcode": '0110011', "funct3": '110', "funct7": "0000000"},
     "xor": {"Format": "R","Opcode": '0110011', "funct3": '100', "funct7": "0000000"},
@@ -71,28 +72,22 @@ def conversao_binaria(valor):
 
     elif valor.startswith("0b"):
         v_binario =  valor[2:]
-        if len(v_binario) < 5:
-            return v_binario.zfill(5)
-        else:
-            return v_binario
-         
+        return v_binario.zfill(5) if len(v_binario) < 5 else v_binario
+
     elif valor.startswith("0x") or valor.startswith("-0x"):
-        if valor.startswith("0x"):
-            numero = int(valor[2:], 16)           
-        else:
-            numero = -int(valor[3:], 16)
+        numero = int(valor, 16)
         return format(numero & 0x1F, '05b')
     
     elif (valor.isdigit()) or (valor.startswith('-') and valor[1:].isdigit()):
         numero = int(valor)
         return format(numero, '05b')
-    
+
     return None
 
 def extrair_imediato(imm, Format):
     if imm is None:
         return
-    
+
     if imm.startswith("0x"):
         imm = int(imm, 16)
     elif imm.startswith("-0x"):
@@ -112,7 +107,7 @@ def extrair_imediato(imm, Format):
 
 def montar_instrucao(instr, rd, rs1, rs2, imm):
     if instr not in instrucoes:
-        print("Instrução invalida")
+        print("Instrução inválida")
         return None
     
     info = instrucoes[instr]
@@ -125,7 +120,7 @@ def montar_instrucao(instr, rd, rs1, rs2, imm):
     rs1_bin = conversao_binaria(rs1) if fmt != "U" else extrair_imediato(rs1, fmt)
     rs2_bin = conversao_binaria(rs2)  
     imm_bin = extrair_imediato(imm, fmt)
-        
+
     if fmt == "R":
         rs2_bin = imm_bin if rs2_bin is None else rs2_bin
         return f"{funct7}{rs2_bin}{rs1_bin}{funct3}{rd_bin}{opcode}"
